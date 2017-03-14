@@ -54,31 +54,41 @@ This project is solely provided to demonstrate that the Spring Cloud RestTemplat
 	```
 	
 1. Run the API Gateway Service:
-
+	
 	```
 	cd api-gateway
 	./gradlew bootRun
-
 	```
 	
 1. Demonstrate the Bug.
 
-	Create a new Car through the API Gateway (port 9090):
+	Create a new Car through the API Gateway (port 9090) which is a POST and works:
 	
 	```
-curl -H "Content-Type: application/json" -X POST -d '{"make":"Audi","model":"A6"}' http://localhost:9090/cars
-http://localhost:8080/cars/eaec4b4f-c713-4f1d-b6e4-631793b9590d
+	curl -H "Content-Type: application/json" -X POST -d '{"make":"Audi","model":"A6"}' http://localhost:9090/cars
 
+	http://localhost:8080/cars/eaec4b4f-c713-4f1d-b6e4-631793b9590d
 	```
 	
-	Update that Car's model through the API Gateway (port 9090), which will demonstrate the bug:
+	Update that Car's model through the API Gateway (port 9090), which is a PATCH and won't work (this is the bug):
 	
 	```
 	curl -H "Content-Type: application/json" -X PATCH http://localhost:9090/cars/eaec4b4f-c713-4f1d-b6e4-631793b9590d/S6
-{"timestamp":1489482314111,"status":500,"error":"Internal Server Error","exception":"org.springframework.web.client.ResourceAccessException","message":"I/O error on PATCH request for \"http://localhost:8080/cars/eaec4b4f-c713-4f1d-b6e4-631793b9590d\": Invalid HTTP method: PATCH; nested exception is java.net.ProtocolException: Invalid HTTP method: PATCH","path":"/cars/eaec4b4f-c713-4f1d-b6e4-631793b9590d/S6"}
+	
+	{
+		"timestamp":1489482314111,
+		"status":500,
+		"error":"Internal Server Error",
+		"exception":"org.springframework.web.client.ResourceAccessException",
+		"message":"I/O error on PATCH request for \"http://localhost:8080/cars/eaec4b4f-c713-4f1d-b6e4-631793b9590d\": Invalid HTTP method: PATCH; nested exception is java.net.ProtocolException: Invalid HTTP method: PATCH",
+		"path":"/cars/eaec4b4f-c713-4f1d-b6e4-631793b9590d/S6"
+	}
 	```
-
-	Review the logs and you'll see similar to the following:
+	Note that I applied the formatting to the JSON so that it's easier to see.
+	
+	Observe the message field mention that the error is in making the call to the downstream Cars Service endpoint. This call works directly as demonstrated above, but does *not* work when going through the `RestTemplate`.
+	
+	Review the logs and you'll see similar to the followingw:
 	
 	```
 	PATCHing to /cars/eaec4b4f-c713-4f1d-b6e4-631793b9590d with CarPatch{model=S6}
